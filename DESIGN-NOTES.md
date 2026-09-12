@@ -16,6 +16,10 @@ Services explain concrete work. Process copy explains the scope/price/timing con
 
 ## Practical limits
 
-The portfolio needs your real videos to demonstrate your craft. Google Drive playback depends on the video's access settings and Drive's player. The contact flow uses the visitor's mail app; no backend submission service or enquiry database is configured.
+The portfolio needs your real videos to demonstrate your craft. Google Drive playback depends on the video's access settings and Drive's player. The contact flow opens Gmail or Outlook in the browser, with a configured mail app as an alternative. There is also a direct Instagram message link. No backend submission service or enquiry database is configured.
 
-Browser visual testing was not performed. Validation covers local references, HTML structure, JavaScript syntax, media-link handling and brief generation. Responsive layouts and native keyboard-accessible controls are included in the source.
+The follow-up additions preserve the original design: English/Arabic selection with right-to-left layout, a section-aware scroll playhead, restrained heading reveals, and title animations whose position follows the timeline. Reduced-motion preferences are respected. Language changes preserve the visitor's form input.
+
+The gallery now gives the first edit a large framed presentation, with a sharp complete video frame over a softened background derived from that same frame. Additional edits use an offset contact sheet. The first supplied reel includes its actual thumbnail and a six-second silent preview; the full video remains hosted on Drive. Future Drive and YouTube entries can fall back to their provider thumbnails when a local poster is absent.
+
+Desktop English and Arabic layouts, the featured gallery and the embedded Drive player were inspected in the browser. Local checks also cover references, HTML structure, JavaScript syntax, media links, email drafts, language switching without losing form input, seekable title animation and a 37-item gallery. Responsive layouts are included; a full mobile-device test was not performed.
