@@ -1,0 +1,5 @@
+# Backup written by add-videos.cmd
+docs/js/work.js.bak
+
+# Local preview settings, not part of the site
+.claude/
