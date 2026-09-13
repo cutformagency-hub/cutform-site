@@ -191,6 +191,7 @@
   const scrollTrack=document.querySelector('.scroll-cut-track');
   const chapters=[['.hero','opening'],['#work','work'],['#services','services'],['#studio','studio'],['#process','process'],['.belief','belief'],['#contact','contact']].map(([selector,key])=>({element:document.querySelector(selector),key}));
   let scrollFrame=0;
+  const revealing=[];
   function updateScroll(){
     scrollFrame=0;const y=window.scrollY,max=Math.max(1,document.documentElement.scrollHeight-window.innerHeight),percent=Math.round(Math.min(100,Math.max(0,y/max*100)));
     scrollCut.hidden=y<160 || document.querySelector('#player')?.open;
@@ -199,15 +200,50 @@
     document.querySelector('[data-scroll-percent]').textContent=percent+'%';
     let chapter=chapters[0];for(const candidate of chapters)if(candidate.element.getBoundingClientRect().top<window.innerHeight*.45)chapter=candidate;
     document.querySelector('[data-scroll-section]').textContent=t(chapter.key);
+    settleReveals();
   }
   function requestScroll(){if(!scrollFrame)scrollFrame=requestAnimationFrame(updateScroll);}
-  window.addEventListener('scroll',requestScroll,{passive:true});window.addEventListener('resize',requestScroll);
-  if('ResizeObserver' in window)new ResizeObserver(requestScroll).observe(document.body);
-  if(!reduced.matches && 'IntersectionObserver' in window){
-    const reveal=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){entry.target.classList.add('has-entered');reveal.unobserve(entry.target);}},{threshold:.12});
-    document.querySelectorAll('.section h2,.belief h2').forEach(el=>{if(el.getBoundingClientRect().top>window.innerHeight){el.classList.add('scroll-reveal');reveal.observe(el);}});
+  // Reveals settle straight off the scroll event rather than inside the animation
+  // frame: a throttled or stalled frame must never leave a heading clipped away.
+  function onScroll(){settleReveals();requestScroll();}
+  window.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);
+  if('ResizeObserver' in window)new ResizeObserver(onScroll).observe(document.body);
+  // A reveal hides its element until it has been seen, so it must be impossible to
+  // leave one hidden. Three independent triggers release it -- the observer, the raw
+  // scroll event, and the sweeps below -- and once released the clip is dropped for
+  // good. Relying on the observer alone left headings invisible on some phones.
+  const revealWatcher='IntersectionObserver' in window?new IntersectionObserver(entries=>{
+    for(const entry of entries)if(entry.isIntersecting)release(entry.target);
+  },{threshold:.12,rootMargin:'0px 0px -6% 0px'}):null;
+  function arm(el,className){
+    el.classList.add(className);revealing.push(el);revealWatcher?.observe(el);
   }
-  requestScroll();
+  function release(el){
+    const at=revealing.indexOf(el);if(at<0)return;
+    revealing.splice(at,1);revealWatcher?.unobserve(el);enter(el);
+  }
+  function enter(el){
+    el.classList.add('has-entered');
+    const done=()=>el.classList.add('reveal-done');
+    el.addEventListener('transitionend',done,{once:true});
+    setTimeout(done,1400);
+  }
+  function settleReveals(){
+    for(let i=revealing.length-1;i>=0;i--){
+      const el=revealing[i];
+      if(el.getBoundingClientRect().top<window.innerHeight-40)release(el);
+    }
+  }
+  if(!reduced.matches){
+    document.querySelectorAll('.section h2,.belief h2').forEach(el=>{if(el.getBoundingClientRect().top>window.innerHeight)arm(el,'scroll-reveal');});
+  }
+  // Last resort: anything still armed and on screen after the page settles is shown,
+  // so a stalled frame or a restored-from-cache page never leaves a title invisible.
+  const sweep=()=>{settleReveals();requestScroll();};
+  window.addEventListener('load',()=>{sweep();setTimeout(sweep,500);});
+  window.addEventListener('pageshow',sweep);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)sweep();});
+  requestScroll();settleReveals();
 
   const dialog = document.querySelector('#player');
   const stage = document.querySelector('#player-stage');
@@ -285,9 +321,7 @@
   },{threshold:[0,.25,.6,.8,1]}):null;
   document.addEventListener('visibilitychange',()=>{if(document.hidden){if(activePreview)pausePreview(activePreview);}else bestVisiblePreview();});
   reduced.addEventListener('change',bestVisiblePreview);
-  const workReveal=!reduced.matches && 'IntersectionObserver' in window?new IntersectionObserver(entries=>{
-    for(const entry of entries)if(entry.isIntersecting){entry.target.classList.add('has-entered');workReveal.unobserve(entry.target);}
-  },{threshold:.15,rootMargin:'0px 0px -8% 0px'}):null;
+  const revealCards=!reduced.matches;
   validProjects.forEach(({item,source},index)=>{
     const feature=index===0 || item.feature;
     const card=element('article','work-item'+(feature?' work-feature':''));
@@ -360,7 +394,7 @@
     if(item.description || item.descriptionAr)caption.append(element('p','work-desc',projectText(item,'description')));
     const watch=element('button','work-caption-play',t('watch')+' ↗');watch.type='button';watch.addEventListener('click',()=>open(watch));caption.append(watch);
     card.append(button,caption);grid.append(card);projectViews.push({item,button,caption,label,feature});
-    if(workReveal){card.classList.add('work-reveal');card.style.transitionDelay=(index%3)*90+'ms';workReveal.observe(card);}
+    if(revealCards){card.style.transitionDelay=(index%3)*90+'ms';arm(card,'work-reveal');}
   });
   if(validProjects.length){grid.hidden=false;document.querySelector('#work-empty').hidden=true;}
 
@@ -373,12 +407,35 @@
     const services=['Reels & short form','Creator content','Motion & finishing',"Let's figure it out"],index=services.indexOf(raw);
     return {name:String(data.get('name')||''),service:index>=0?t('service'+index):raw,project:String(data.get('project')||''),footage:String(data.get('footage')||''),language:language()};
   }
+  // On a phone a mail.google.com link lands in the browser, not in the Gmail app.
+  // A mailto: hands off to whichever mail app the phone is set up with -- Gmail for
+  // almost everyone -- so touch devices get the app and desktops keep Gmail on the web.
+  const touchDevice=window.matchMedia('(hover:none) and (pointer:coarse)');
+  function mailtoHref(subject){
+    return 'mailto:cutform.agency@gmail.com'+(subject?'?subject='+encodeURIComponent(subject):'');
+  }
+  function updateMailLinks(){
+    const phone=touchDevice.matches;
+    const direct=document.querySelector('.contact-direct>a[href*="mail.google.com"],.contact-direct>a[href^="mailto:"]');
+    if(direct){
+      direct.href=phone?mailtoHref(''):'https://mail.google.com/mail/?'+new URLSearchParams({view:'cm',fs:'1',to:'cutform.agency@gmail.com'});
+      if(phone)direct.removeAttribute('target');else direct.target='_blank';
+    }
+    const reel=document.querySelector('.empty-copy .text-link');
+    if(reel && phone){
+      reel.href=mailtoHref(language()==='ar'?'هل يمكنني مشاهدة أعمالكم؟':'Can I see your reel?');
+      reel.removeAttribute('target');
+    }
+  }
   function updateEmail(){
     const selected=['gmail','outlook','app'].includes(provider.value)?provider.value:'gmail';
     emailLink.href=buildContactLinks(values())[selected];
     emailLink.querySelector('[data-email-label]').textContent=t(selected);
     if(selected==='app')emailLink.removeAttribute('target');else emailLink.target='_blank';
   }
+  // Same reasoning for the brief: on a phone the draft should land in the mail app.
+  if(touchDevice.matches && provider.value==='gmail')provider.value='app';
+  touchDevice.addEventListener('change',()=>{updateMailLinks();updateEmail();});
   function validBrief(){
     const data=values();
     brief.elements.name.setCustomValidity(data.name.trim()?'':t('nameRequired'));
@@ -409,6 +466,7 @@
   emailCopy.hidden=false;emailCopy.addEventListener('click',async()=>{if(await copyText('cutform.agency@gmail.com',t('emailCopied'))){emailCopy.textContent=t('emailDone');setTimeout(()=>emailCopy.textContent=t('copyEmail'),2500);}});
   document.querySelectorAll('[data-service]').forEach(link=>link.addEventListener('click',()=>{const service=link.dataset.service;for(const radio of brief.querySelectorAll('input[name="service"]'))radio.checked=radio.value===service;updateEmail();}));
   document.addEventListener('cutform:language',()=>{
+    updateMailLinks();
     stop();animateTitles=false;showFrame(scrub.value,true);updateEmail();requestScroll();status.textContent='';
     for(const field of [brief.elements.name,brief.elements.project,brief.elements.footage])field.setCustomValidity('');
     document.querySelector('.manual-copy-label')?.replaceChildren(document.createTextNode(t('manual')));
@@ -424,6 +482,7 @@
     }
     if(activeProject){document.querySelector('#player-title').textContent=projectText(activeProject,'title');document.querySelector('#player-description').textContent=projectText(activeProject,'description');const media=stage.querySelector('iframe');if(media)media.title=projectText(activeProject,'title');}
   });
+  updateMailLinks();
   updateEmail();
   brief.hidden = false;
 })();

@@ -29,7 +29,7 @@
 .scroll-cut-track i{position:absolute;inset-inline-start:0;top:0;height:100%;width:var(--scroll-progress,0%);background:var(--gold)}
 .scroll-cut-track i:after{content:'';position:absolute;inset-inline-end:0;bottom:0;width:2px;height:7px;background:var(--gold)}
 .scroll-reveal{opacity:0;transform:translateY(22px);clip-path:inset(0 0 100% 0);transition:clip-path .85s cubic-bezier(.16,.84,.24,1),transform .85s cubic-bezier(.16,.84,.24,1),opacity .55s ease}
-.scroll-reveal.has-entered{opacity:1;transform:none;clip-path:inset(-15% -5% -25% -5%)}
+.scroll-reveal.has-entered{opacity:1;transform:none;clip-path:inset(0 0 0 0);clip-path:inset(-15% -5% -25% -5%)}
 body:has(.brief :focus-visible) .scroll-cut{opacity:0}
 html[lang="ar"]{--sans:'Noto Sans Arabic',Arial,sans-serif;--serif:'Amiri',Georgia,serif}
 html[lang="ar"] body{line-height:1.9}
@@ -203,3 +203,22 @@ dialog[data-shape="16/9"] #player-stage iframe,dialog[data-shape="16/9"] #player
   .work-play .play-circle,.work-feature .play-circle{width:34px;height:34px}
 }
 @media(prefers-reduced-motion:reduce){.work-reveal{opacity:1;transform:none}}
+
+/* Once a reveal has played, the clip is dropped for good: no browser quirk can
+   leave a heading or a card stuck in its hidden state. */
+.scroll-reveal.reveal-done,.work-reveal.reveal-done{opacity:1;transform:none;clip-path:none}
+
+/* On a phone the player becomes a full-screen sheet. A Google Drive embed brings
+   its own touch controls, and those need the whole width to lay out; squeezed into
+   a boxed dialog they pile on top of each other. */
+@media(max-width:700px){
+  dialog#player{inset:0;width:100%;max-width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;margin:0;border:0;padding:12px 0 calc(10px + env(safe-area-inset-bottom,0px))}
+  dialog#player[open]{display:flex;flex-direction:column}
+  dialog#player .player-bar{flex:0 0 auto;margin:0 14px 10px}
+  dialog#player #player-stage{flex:1 1 auto;min-height:0;display:flex}
+  dialog#player #player-stage iframe,
+  dialog#player #player-stage video{flex:1 1 auto;width:100%;height:100%;max-height:none;aspect-ratio:auto;object-fit:contain}
+  dialog#player #player-description{flex:0 0 auto;margin:10px 14px 0;font-size:14px}
+  dialog#player #player-description:empty{margin:0}
+  dialog#player #player-source{flex:0 0 auto;margin:10px 14px 0}
+}
