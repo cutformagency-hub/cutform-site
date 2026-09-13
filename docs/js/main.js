@@ -71,6 +71,11 @@
 
   const t = key => window.CutformI18n.t(key);
   const language = () => window.CutformI18n.language;
+  // A reload should feel like arriving, not like nothing happened. Browsers restore
+  // the old scroll position by default, which lands you mid-page with every reveal
+  // already played; manual restoration puts a refresh back at the opening.
+  if('scrollRestoration' in history)history.scrollRestoration='manual';
+  if(!location.hash)window.scrollTo(0,0);
   document.querySelector('[data-year]').textContent = new Date().getFullYear();
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   const consoleElement = document.querySelector('[data-console]');
@@ -191,15 +196,30 @@
   const scrollTrack=document.querySelector('.scroll-cut-track');
   const chapters=[['.hero','opening'],['#work','work'],['#services','services'],['#studio','studio'],['#process','process'],['.belief','belief'],['#contact','contact']].map(([selector,key])=>({element:document.querySelector(selector),key}));
   let scrollFrame=0;
-  const revealing=[];
+  const revealing=[],probes=[];
+  // Everything this runs on is looked up once and the DOM is only written when a
+  // value actually changed -- it fires on every frame of every scroll, so a stray
+  // querySelector or a redundant write here is felt as roughness.
+  const scrollPercentOut=document.querySelector('[data-scroll-percent]');
+  const scrollSectionOut=document.querySelector('[data-scroll-section]');
+  const playerDialog=document.querySelector('#player');
+  let lastPercent=-1,lastChapter=null,lastHidden=null;
   function updateScroll(){
-    scrollFrame=0;const y=window.scrollY,max=Math.max(1,document.documentElement.scrollHeight-window.innerHeight),percent=Math.round(Math.min(100,Math.max(0,y/max*100)));
-    scrollCut.hidden=y<160 || document.querySelector('#player')?.open;
-    scrollCut.style.setProperty('--scroll-progress',percent+'%');
-    scrollTrack.setAttribute('aria-valuenow',String(percent));
-    document.querySelector('[data-scroll-percent]').textContent=percent+'%';
-    let chapter=chapters[0];for(const candidate of chapters)if(candidate.element.getBoundingClientRect().top<window.innerHeight*.45)chapter=candidate;
-    document.querySelector('[data-scroll-section]').textContent=t(chapter.key);
+    scrollFrame=0;
+    const y=window.scrollY,view=window.innerHeight;
+    const max=Math.max(1,document.documentElement.scrollHeight-view);
+    const percent=Math.round(Math.min(100,Math.max(0,y/max*100)));
+    const hidden=y<160 || playerDialog.open;
+    if(hidden!==lastHidden){lastHidden=hidden;scrollCut.hidden=hidden;}
+    if(percent!==lastPercent){
+      lastPercent=percent;
+      scrollCut.style.setProperty('--scroll-progress',percent+'%');
+      scrollTrack.setAttribute('aria-valuenow',String(percent));
+      scrollPercentOut.textContent=percent+'%';
+    }
+    let chapter=chapters[0];const line=view*.45;
+    for(const candidate of chapters)if(candidate.element.getBoundingClientRect().top<line)chapter=candidate;
+    if(chapter!==lastChapter){lastChapter=chapter;scrollSectionOut.textContent=t(chapter.key);}
     settleReveals();
   }
   function requestScroll(){if(!scrollFrame)scrollFrame=requestAnimationFrame(updateScroll);}
@@ -233,10 +253,15 @@
       const el=revealing[i];
       if(el.getBoundingClientRect().top<window.innerHeight-40)release(el);
     }
+    for(let i=probes.length-1;i>=0;i--){
+      const probe=probes[i];
+      if(probe.card.getBoundingClientRect().top<window.innerHeight*2){probes.splice(i,1);probe.start();}
+    }
   }
-  if(!reduced.matches){
-    document.querySelectorAll('.section h2,.belief h2').forEach(el=>{if(el.getBoundingClientRect().top>window.innerHeight)arm(el,'scroll-reveal');});
-  }
+  // Armed in every case. Under reduced motion the CSS drops the travel and the wipe
+  // and leaves a plain fade, so the page still reveals itself as you scroll instead
+  // of arriving fully drawn.
+  document.querySelectorAll('.section h2,.belief h2').forEach(el=>{if(el.getBoundingClientRect().top>window.innerHeight)arm(el,'scroll-reveal');});
   // Last resort: anything still armed and on screen after the page settles is shown,
   // so a stalled frame or a restored-from-cache page never leaves a title invisible.
   const sweep=()=>{settleReveals();requestScroll();};
@@ -250,12 +275,18 @@
   let trigger = null, activeProject = null;
   const projectViews=[];
   const projectText=(item,key)=>language()==='ar'?(item[key+'Ar']||item[key]||''):(item[key]||'');
+  // The slate line above the title and the credit line under the video, both built
+  // from what the project already declares so an entry without them stays clean.
+  const playerSlot=item=>['CF / '+String(item.slot||1).padStart(2,'0'),projectText(item,'kind')].filter(Boolean).join('  —  ');
+  const playerMeta=item=>[projectText(item,'credit')||item.client,item.duration].filter(Boolean).join('  /  ');
   function openVideo(item, source, button) {
     if (!dialog.showModal) { window.open(source.original, '_blank', 'noopener,noreferrer'); return; }
     trigger = button;activeProject=item;scrollCut.hidden=true;
     const shape=(['9/16','16/9','1/1','4/5'].includes(item.ratio)?item.ratio:item.measured)||'9/16';
     dialog.dataset.shape=shape;
     document.querySelector('#player-title').textContent = projectText(item,'title') || t('video');
+    document.querySelector('[data-player-slot]').textContent = playerSlot(item);
+    document.querySelector('[data-player-meta]').textContent = playerMeta(item);
     document.querySelector('#player-description').textContent = projectText(item,'description');
     const sourceLink = document.querySelector('#player-source');
     sourceLink.href = source.original;
@@ -321,8 +352,8 @@
   },{threshold:[0,.25,.6,.8,1]}):null;
   document.addEventListener('visibilitychange',()=>{if(document.hidden){if(activePreview)pausePreview(activePreview);}else bestVisiblePreview();});
   reduced.addEventListener('change',bestVisiblePreview);
-  const revealCards=!reduced.matches;
   validProjects.forEach(({item,source},index)=>{
+    item.slot=index+1;
     const feature=index===0 || item.feature;
     const card=element('article','work-item'+(feature?' work-feature':''));
     const button=element('button','work-open');button.type='button';button.setAttribute('aria-label',t('playVideo')+' '+projectText(item,'title'));
@@ -358,9 +389,11 @@
       const ownFrame=source.local && !candidates.length;
       if(ownFrame)button.classList.add('has-visual','shows-still');
       const record={video,button,visibility:0,stillAt:0};previews.push(record);
-      // Anything the entry left out, the file itself can answer.
+      // Anything the entry left out, the file itself can answer -- but only once the
+      // card is worth looking at. Asking every local file for its metadata up front
+      // pulled tens of megabytes before the page had finished arriving.
       if(source.local && (ownFrame || !item.duration || !item.ratio)){
-        video.preload='metadata';
+        probes.push({card,start(){video.preload='metadata';}});
         video.addEventListener('loadedmetadata',()=>{
           if(!item.duration && isFinite(video.duration) && video.duration>0){
             durationBadge.textContent=clockFace(video.duration);durationBadge.hidden=false;
@@ -394,7 +427,7 @@
     if(item.description || item.descriptionAr)caption.append(element('p','work-desc',projectText(item,'description')));
     const watch=element('button','work-caption-play',t('watch')+' ↗');watch.type='button';watch.addEventListener('click',()=>open(watch));caption.append(watch);
     card.append(button,caption);grid.append(card);projectViews.push({item,button,caption,label,feature});
-    if(revealCards){card.style.transitionDelay=(index%3)*90+'ms';arm(card,'work-reveal');}
+    card.style.transitionDelay=(index%3)*90+'ms';arm(card,'work-reveal');
   });
   if(validProjects.length){grid.hidden=false;document.querySelector('#work-empty').hidden=true;}
 
@@ -467,7 +500,7 @@
   document.querySelectorAll('[data-service]').forEach(link=>link.addEventListener('click',()=>{const service=link.dataset.service;for(const radio of brief.querySelectorAll('input[name="service"]'))radio.checked=radio.value===service;updateEmail();}));
   document.addEventListener('cutform:language',()=>{
     updateMailLinks();
-    stop();animateTitles=false;showFrame(scrub.value,true);updateEmail();requestScroll();status.textContent='';
+    stop();animateTitles=false;showFrame(scrub.value,true);updateEmail();lastChapter=null;requestScroll();status.textContent='';
     for(const field of [brief.elements.name,brief.elements.project,brief.elements.footage])field.setCustomValidity('');
     document.querySelector('.manual-copy-label')?.replaceChildren(document.createTextNode(t('manual')));
     document.querySelector('#player-source').textContent=t('fallback');
@@ -480,7 +513,7 @@
       view.caption.querySelector('.work-feature-label').textContent=t(view.feature?'featured':'selected');
       view.caption.querySelector('.work-caption-play').textContent=t('watch')+' ↗';
     }
-    if(activeProject){document.querySelector('#player-title').textContent=projectText(activeProject,'title');document.querySelector('#player-description').textContent=projectText(activeProject,'description');const media=stage.querySelector('iframe');if(media)media.title=projectText(activeProject,'title');}
+    if(activeProject){document.querySelector('#player-title').textContent=projectText(activeProject,'title');document.querySelector('[data-player-slot]').textContent=playerSlot(activeProject);document.querySelector('[data-player-meta]').textContent=playerMeta(activeProject);document.querySelector('#player-description').textContent=projectText(activeProject,'description');const media=stage.querySelector('iframe');if(media)media.title=projectText(activeProject,'title');}
   });
   updateMailLinks();
   updateEmail();

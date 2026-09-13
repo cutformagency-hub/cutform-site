@@ -28,6 +28,8 @@ const CUTFORM_WORK = [
     title: "Need and editor?",
     kind: "Reel",
     credit: "Edit, motion & sound",
+    duration: "00:10",
+    ratio: "9/16",
     video: "videos/full-video.mp4",
     poster: "videos/full-video.jpg"
   },
@@ -53,6 +55,8 @@ const CUTFORM_WORK = [
     title: "Documentary",
     kind: "Documentary",
     credit: "Edit, motion & sound",
+    duration: "01:06",
+    ratio: "16/9",
     video: "videos/documentary.mp4",
     poster: "videos/documentary.jpg"
   },
@@ -61,7 +65,7 @@ const CUTFORM_WORK = [
     kind: "Reel",
     credit: "Edit, motion & sound",
     drive: "https://drive.google.com/file/d/1MUKURrF-n5XkAahFFxWWRucpCMdTF_iO/view",
-    poster: "assets/work/onemust.png",
+    poster: "assets/work/onemust.jpg",
   },
   {
     title: "ad",
@@ -80,7 +84,7 @@ const CUTFORM_WORK = [
     kind: "Reel",
     credit: "Edit, motion & sound",
     drive: "https://drive.google.com/file/d/1gkQuyhKHLyKoZLyGLr1wRjuU4hvq7ePj/view",
-    poster: "assets/work/oldguy.png",
+    poster: "assets/work/oldguy.jpg",
   },
   {
     title: "ad",
@@ -93,6 +97,6 @@ const CUTFORM_WORK = [
     kind: "Reel",
     credit: "Edit, motion & sound",
     drive: "https://drive.google.com/file/d/18G3ufdZZN2vi3sicwknjgKkrHykc81bG/view",
-    poster: "assets/work/ad_screensht.png",
+    poster: "assets/work/ad_screensht.jpg",
   }
 ];

@@ -132,8 +132,20 @@
   let language = 'en';
   const entries = copy.map(([selector, arabic]) => ({element:document.querySelector(selector),arabic})).filter(entry=>entry.element).map(entry=>({...entry,english:entry.element.innerHTML}));
   const t = key => words[language][key] ?? words.en[key] ?? key;
+  // The Arabic faces are a large download that English visitors never render, so
+  // they are fetched the first time someone actually switches into Arabic.
+  let arabicFonts=false;
+  function loadArabicFonts(){
+    if(arabicFonts)return;
+    arabicFonts=true;
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&family=Amiri:wght@400&display=swap';
+    document.head.append(link);
+  }
   function setLanguage(value, remember = true) {
     language = value === 'ar' ? 'ar' : 'en';
+    if(language==='ar')loadArabicFonts();
     document.documentElement.lang = language;
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     for (const entry of entries) entry.element.innerHTML = language === 'ar' ? entry.arabic : entry.english;

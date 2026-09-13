@@ -212,13 +212,63 @@ dialog[data-shape="16/9"] #player-stage iframe,dialog[data-shape="16/9"] #player
    its own touch controls, and those need the whole width to lay out; squeezed into
    a boxed dialog they pile on top of each other. */
 @media(max-width:700px){
-  dialog#player{inset:0;width:100%;max-width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;margin:0;border:0;padding:12px 0 calc(10px + env(safe-area-inset-bottom,0px))}
+  dialog#player{inset:0;width:100%;max-width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;margin:0;border:0;padding:0 0 calc(8px + env(safe-area-inset-bottom,0px))}
   dialog#player[open]{display:flex;flex-direction:column}
-  dialog#player .player-bar{flex:0 0 auto;margin:0 14px 10px}
+  dialog#player .player-bar{flex:0 0 auto;margin:0;padding:13px 15px 12px}
+  dialog#player .player-bar h2{font-size:19px}
   dialog#player #player-stage{flex:1 1 auto;min-height:0;display:flex}
   dialog#player #player-stage iframe,
   dialog#player #player-stage video{flex:1 1 auto;width:100%;height:100%;max-height:none;aspect-ratio:auto;object-fit:contain}
-  dialog#player #player-description{flex:0 0 auto;margin:10px 14px 0;font-size:14px}
-  dialog#player #player-description:empty{margin:0}
-  dialog#player #player-source{flex:0 0 auto;margin:10px 14px 0}
+  dialog#player #player-stage:before{top:8px;left:8px}
+  dialog#player #player-stage:after{bottom:8px;right:8px}
+  dialog#player .player-meta{flex:0 0 auto;margin:0;padding:11px 15px 0}
+  dialog#player #player-description{flex:0 0 auto;padding:0 15px;margin:7px 0 0;font-size:14px}
+  dialog#player #player-source{flex:0 0 auto;margin:10px 15px 0}
 }
+
+/* Reduced motion still gets a reveal, just a calm one: no travel, no wipe, only a
+   fade. Switching it off entirely made the page arrive fully drawn, which read as
+   broken rather than considered. */
+@media(prefers-reduced-motion:reduce){
+  .scroll-reveal,.work-reveal{opacity:0;transform:none;clip-path:none;transition:opacity .5s ease!important}
+  .scroll-reveal.has-entered,.work-reveal.has-entered,
+  .scroll-reveal.reveal-done,.work-reveal.reveal-done{opacity:1;transform:none;clip-path:none}
+}
+
+/* The screening room. Same vocabulary as the rest of the site -- gold hairline,
+   mono slate line, viewfinder corners -- so opening a video stays inside the
+   design instead of dropping into a plain grey box. */
+#player{padding:0;border:1px solid #4a4437;background:#141410;box-shadow:0 30px 80px #000a}
+/* A column so the stage gives up height when the title wraps, rather than pushing
+   the panel past its max height and growing a scrollbar. */
+#player[open]{display:flex;flex-direction:column}
+#player:before,.player-bar,.player-meta,#player-description,#player-source{flex:0 0 auto}
+#player-stage{flex:1 1 auto;min-height:0;overflow:hidden;display:flex}
+#player-stage iframe,#player-stage video{flex:1 1 auto;min-height:0;width:100%}
+#player::backdrop{background:#070706f2;backdrop-filter:blur(11px) saturate(.85)}
+#player:before{content:'';display:block;height:2px;background:linear-gradient(90deg,var(--gold) 0,#6b5f49 62%,transparent)}
+.player-bar{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:0;padding:19px 22px 17px;border-bottom:1px solid #2b2a24}
+.player-slot{display:block;color:var(--gold);font-size:11px;margin-bottom:8px}
+.player-slot:empty{display:none}
+.player-bar h2{font:500 clamp(20px,2.2vw,26px) var(--sans);letter-spacing:-.04em;line-height:1.15}
+.player-bar button{display:flex;align-items:center;gap:11px;background:none;border:1px solid #56514494;padding:10px 13px;font-size:14px;flex:0 0 auto;transition:background .25s ease,color .25s ease,border-color .25s ease}
+.player-bar button:hover{background:var(--gold);border-color:var(--gold);color:var(--black)}
+.player-x{position:relative;width:11px;height:11px}
+.player-x:before,.player-x:after{content:'';position:absolute;top:5px;left:0;width:11px;height:1px;background:currentColor}
+.player-x:before{transform:rotate(45deg)}
+.player-x:after{transform:rotate(-45deg)}
+#player-stage{position:relative;background:#000;margin:0}
+#player-stage:before,#player-stage:after{content:'';position:absolute;width:19px;height:19px;border-color:#7d7157;border-style:solid;z-index:2;pointer-events:none}
+#player-stage:before{top:10px;left:10px;border-width:1px 0 0 1px}
+#player-stage:after{bottom:10px;right:10px;border-width:0 1px 1px 0}
+.player-meta{color:var(--gold);padding:15px 22px 0;margin:0;font-size:11px}
+.player-meta:empty{display:none}
+#player-description{padding:0 22px;margin:11px 0 0;font-size:15px;color:var(--muted)}
+#player-description:empty{display:none}
+#player-source{margin:15px 22px 20px}
+
+/* Paint containment on the card frames: they clip their own media anyway, so this
+   just tells the browser it never has to look outside one. Deliberately not using
+   content-visibility on the sections -- it skips layout for offscreen subtrees,
+   which is exactly what the scroll reveals measure against. */
+.work-open{contain:paint}
