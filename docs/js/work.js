@@ -1,6 +1,6 @@
 /* YOUR PROJECTS. The first one in the list gets the big featured layout.
 
-   Easiest way — a file in dist/videos/ only needs a title and the filename.
+   Easiest way — a file in docs/videos/ only needs a title and the filename.
    The site reads the length, the shape and a thumbnail frame out of the file:
 
      { title: "Name of the edit", kind: "Reel", video: "videos/name.mp4" },
@@ -34,7 +34,6 @@ const CUTFORM_WORK = [
   {
     title: "reel",
     kind: "Reel",
-    description: "whatever",
     credit: "Edit, motion & sound",
     duration: "00:41",
     ratio: "9/16",
@@ -45,7 +44,6 @@ const CUTFORM_WORK = [
   {
     title: "reel",
     kind: "Reel",
-    description: "another",
     credit: "Edit, motion & sound",
     duration: "00:38",
     ratio: "9/16",
@@ -57,5 +55,44 @@ const CUTFORM_WORK = [
     credit: "Edit, motion & sound",
     video: "videos/documentary.mp4",
     poster: "videos/documentary.jpg"
+  },
+  {
+    title: "one must imagine sisyphus happy",
+    kind: "Reel",
+    credit: "Edit, motion & sound",
+    drive: "https://drive.google.com/file/d/1MUKURrF-n5XkAahFFxWWRucpCMdTF_iO/view",
+    poster: "assets/work/onemust.png",
+  },
+  {
+    title: "ad",
+    kind: "Reel",
+    credit: "Edit, motion & sound",
+    drive: "https://drive.google.com/file/d/1a6wciOVl4hKu_l_i_6wvQGvq60LUvQ_4/view"
+  },
+  {
+    title: "ad",
+    kind: "Reel",
+    credit: "Edit, motion & sound",
+    drive: "https://drive.google.com/file/d/1x0365cCN7ROK6SgSM5drfGvPM5cRve-P/view"
+  },
+  {
+    title: "ad",
+    kind: "Reel",
+    credit: "Edit, motion & sound",
+    drive: "https://drive.google.com/file/d/1gkQuyhKHLyKoZLyGLr1wRjuU4hvq7ePj/view",
+    poster: "assets/work/oldguy.png",
+  },
+  {
+    title: "ad",
+    kind: "Reel",
+    credit: "Edit, motion & sound",
+    drive: "https://drive.google.com/file/d/1RklwCAisLc8fPtwZABx4ocojpX2aLM6T/view"
+  },
+  {
+    title: "ad",
+    kind: "Reel",
+    credit: "Edit, motion & sound",
+    drive: "https://drive.google.com/file/d/18G3ufdZZN2vi3sicwknjgKkrHykc81bG/view",
+    poster: "assets/work/ad_screensht.png",
   }
 ];
