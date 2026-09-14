@@ -39,7 +39,7 @@ const CUTFORM_WORK = [
     credit: "Edit, motion & sound",
     duration: "00:41",
     ratio: "9/16",
-    drive: "https://drive.google.com/file/d/1zBNLAlJJDwegrQ3157HmN4SzKfm4J6UL/view?usp=drivesdk",
+    video: "videos/reel-01.mp4",
     poster: "assets/work/project-poster.jpg",
     preview: "assets/work/project-preview.mp4"
   },
@@ -49,7 +49,8 @@ const CUTFORM_WORK = [
     credit: "Edit, motion & sound",
     duration: "00:38",
     ratio: "9/16",
-    drive: "https://drive.google.com/file/d/1ZnBgz7M5NR7FaNXE0U6Py5AQIPTVJm-o/view"
+    video: "videos/reel-02.mp4",
+    poster: "videos/reel-02.jpg"
   },
   {
     title: "Documentary",
@@ -64,39 +65,54 @@ const CUTFORM_WORK = [
     title: "one must imagine sisyphus happy",
     kind: "Reel",
     credit: "Edit, motion & sound",
-    drive: "https://drive.google.com/file/d/1MUKURrF-n5XkAahFFxWWRucpCMdTF_iO/view",
-    poster: "assets/work/onemust.jpg",
+    duration: "02:02",
+    ratio: "9/16",
+    video: "videos/sisyphus.mp4",
+    poster: "assets/work/onemust.jpg"
   },
   {
     title: "ad",
     kind: "Reel",
     credit: "Edit, motion & sound",
-    drive: "https://drive.google.com/file/d/1a6wciOVl4hKu_l_i_6wvQGvq60LUvQ_4/view"
+    duration: "00:22",
+    ratio: "9/16",
+    video: "videos/ad-01.mp4",
+    poster: "videos/ad-01.jpg"
   },
   {
     title: "ad",
     kind: "Reel",
     credit: "Edit, motion & sound",
-    drive: "https://drive.google.com/file/d/1x0365cCN7ROK6SgSM5drfGvPM5cRve-P/view"
+    duration: "00:42",
+    ratio: "9/16",
+    video: "videos/ad-02.mp4",
+    poster: "videos/ad-02.jpg"
   },
   {
     title: "ad",
     kind: "Reel",
     credit: "Edit, motion & sound",
-    drive: "https://drive.google.com/file/d/1gkQuyhKHLyKoZLyGLr1wRjuU4hvq7ePj/view",
-    poster: "assets/work/oldguy.jpg",
+    duration: "00:46",
+    ratio: "9/16",
+    video: "videos/ad-03.mp4",
+    poster: "assets/work/oldguy.jpg"
   },
   {
     title: "ad",
     kind: "Reel",
     credit: "Edit, motion & sound",
-    drive: "https://drive.google.com/file/d/1RklwCAisLc8fPtwZABx4ocojpX2aLM6T/view"
+    duration: "00:34",
+    ratio: "9/16",
+    video: "videos/ad-04.mp4",
+    poster: "videos/ad-04.jpg"
   },
   {
     title: "ad",
     kind: "Reel",
     credit: "Edit, motion & sound",
-    drive: "https://drive.google.com/file/d/18G3ufdZZN2vi3sicwknjgKkrHykc81bG/view",
-    poster: "assets/work/ad_screensht.jpg",
+    duration: "00:42",
+    ratio: "9/16",
+    video: "videos/ad-05.mp4",
+    poster: "assets/work/ad_screensht.jpg"
   }
 ];

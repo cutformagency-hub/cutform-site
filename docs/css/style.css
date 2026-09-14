@@ -209,9 +209,8 @@ dialog[data-shape="16/9"] #player-stage iframe,dialog[data-shape="16/9"] #player
 .scroll-reveal.reveal-done,.work-reveal.reveal-done{opacity:1;transform:none;clip-path:none}
 
 /* On a phone the player is a full-screen sheet and the frame is held to the
-   video's own shape. A Google Drive embed paints its controls across the whole
-   iframe, so any letterboxing inside that iframe leaves the controls hanging past
-   the edges of the picture. Matching the box to the video keeps them lined up. */
+   video's own shape, so the picture meets its own edges and the browser's controls
+   sit against the video rather than floating in surrounding black. */
 @media(max-width:700px){
   dialog#player{inset:0;width:100%;max-width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;margin:0;border:0;background:#0b0b09;padding:0 0 calc(6px + env(safe-area-inset-bottom,0px))}
   dialog#player[open]{display:flex;flex-direction:column}
@@ -220,7 +219,7 @@ dialog[data-shape="16/9"] #player-stage iframe,dialog[data-shape="16/9"] #player
   dialog#player .player-slot{margin-bottom:8px}
   dialog#player #player-stage{flex:1 1 auto;min-height:0}
   dialog#player #player-stage iframe,
-  dialog#player #player-stage video{flex:0 1 auto;width:auto;height:100%;max-width:100%;max-height:100%;min-height:0;margin:0 auto;object-fit:contain}
+  dialog#player #player-stage video{flex:0 1 auto;width:100%;height:auto;max-width:100%;max-height:100%;min-height:0;margin:auto;object-fit:contain}
   dialog#player[data-shape="9/16"] #player-stage iframe,
   dialog#player[data-shape="9/16"] #player-stage video{aspect-ratio:9/16}
   dialog#player[data-shape="4/5"] #player-stage iframe,

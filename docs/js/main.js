@@ -341,8 +341,11 @@
     activePreview=record;
     try{await record.video.play();if(activePreview===record)record.button.classList.add('is-previewing');else record.video.pause();}catch{if(activePreview===record)activePreview=null;}
   }
+  // Scrolling past a card starts its preview by itself. Hovering one is a deliberate
+  // act and still works, but nobody on a metered connection asked for ten clips.
+  const thrifty=()=>navigator.connection?.saveData===true;
   function bestVisiblePreview(){
-    if(reduced.matches || document.hidden || dialog.open){if(activePreview)pausePreview(activePreview);return;}
+    if(reduced.matches || document.hidden || dialog.open || thrifty()){if(activePreview)pausePreview(activePreview);return;}
     const next=previews.filter(record=>record.visibility>.6).sort((a,b)=>b.visibility-a.visibility)[0];
     if(next && next!==activePreview)beginPreview(next);else if(!next && activePreview)pausePreview(activePreview);
   }
