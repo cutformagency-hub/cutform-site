@@ -291,6 +291,72 @@
   const previous=document.createElement('button'), next=document.createElement('button');
   previous.type=next.type='button';previous.textContent='↑';next.textContent='↓';
   const feedHint=document.createElement('span');feedHint.className='mono';
+  let hintTimer=0, titleTimer=0;
+  const titleOverlay=dialog.querySelector('.player-bar');
+  function revealVideoTitle(){
+    clearTimeout(titleTimer);
+    titleOverlay.classList.remove('is-idle');
+    if(!dialog.open)return;
+    const media=feedSlides[feedIndex]?.querySelector('video,iframe');
+    // Keep the title visible while paused, loading, or waiting for a play gesture.
+    if(!media || (media.tagName==='VIDEO' && media.paused) || controlSeeking)return;
+    titleTimer=setTimeout(()=>{
+      if(dialog.open && media.isConnected && (media.tagName!=='VIDEO' || !media.paused))
+        titleOverlay.classList.add('is-idle');
+    },2500);
+  }
+  stage.addEventListener('pointerdown',revealVideoTitle,{passive:true});
+  stage.addEventListener('pointermove',event=>{if(event.pointerType==='mouse')revealVideoTitle();},{passive:true});
+  stage.addEventListener('keydown',revealVideoTitle);
+
+  // Title and timeline share one overlay, so they always fade together.
+  const playbackControls=document.createElement('div');playbackControls.className='viewer-controls';
+  const togglePlayback=document.createElement('button'),toggleSound=document.createElement('button'),expandVideo=document.createElement('button');
+  for(const button of [togglePlayback,toggleSound,expandVideo])button.type='button';
+  const seekVideo=document.createElement('input');seekVideo.type='range';seekVideo.min='0';seekVideo.max='100';seekVideo.step='.1';seekVideo.value='0';
+  const videoTime=document.createElement('span');videoTime.className='viewer-time';
+  let controlSeeking=false;
+  playbackControls.append(seekVideo,togglePlayback,videoTime,toggleSound,expandVideo);titleOverlay.append(playbackControls);
+  const currentVideo=()=>feedSlides[feedIndex]?.querySelector('video');
+  function updatePlaybackControls(){
+    const media=currentVideo(),ar=language()==='ar';
+    playbackControls.hidden=!media;
+    if(!media)return;
+    togglePlayback.textContent=media.paused?'▶':'Ⅱ';
+    togglePlayback.setAttribute('aria-label',ar?(media.paused?'تشغيل الفيديو':'إيقاف الفيديو مؤقتًا'):(media.paused?'Play video':'Pause video'));
+    toggleSound.textContent=media.muted?'♪ ×':'♪';
+    toggleSound.setAttribute('aria-label',ar?(media.muted?'تشغيل الصوت':'كتم الصوت'):(media.muted?'Unmute video':'Mute video'));
+    expandVideo.textContent='⛶';expandVideo.setAttribute('aria-label',ar?'ملء الشاشة':'Fullscreen video');
+    expandVideo.hidden=!(dialog.requestFullscreen || media.webkitEnterFullscreen);
+    seekVideo.setAttribute('aria-label',ar?'موضع الفيديو':'Video position');
+    const duration=Number.isFinite(media.duration)?media.duration:0;
+    seekVideo.disabled=!duration;
+    if(!controlSeeking)seekVideo.value=duration?String(media.currentTime/duration*100):'0';
+    const stamp=value=>Math.floor(value/60)+':'+String(Math.floor(value%60)).padStart(2,'0');
+    videoTime.textContent=stamp(media.currentTime||0)+' / '+stamp(duration);
+    seekVideo.setAttribute('aria-valuetext',videoTime.textContent);
+  }
+  function toggleCurrentVideo(){
+    const media=currentVideo();if(!media)return;
+    if(media.paused)media.play().catch(()=>{});else media.pause();
+    revealVideoTitle();updatePlaybackControls();
+  }
+  togglePlayback.addEventListener('click',toggleCurrentVideo);
+  toggleSound.addEventListener('click',()=>{const media=currentVideo();if(media){media.muted=!media.muted;updatePlaybackControls();revealVideoTitle();}});
+  expandVideo.addEventListener('click',async()=>{
+    try{if(document.fullscreenElement)await document.exitFullscreen();else if(dialog.requestFullscreen)await dialog.requestFullscreen();else currentVideo()?.webkitEnterFullscreen?.();}catch{}
+    revealVideoTitle();
+  });
+  seekVideo.addEventListener('pointerdown',()=>{controlSeeking=true;revealVideoTitle();});
+  function finishSeek(){if(controlSeeking){controlSeeking=false;revealVideoTitle();}}
+  window.addEventListener('pointerup',finishSeek);window.addEventListener('pointercancel',finishSeek);
+  seekVideo.addEventListener('input',()=>{const media=currentVideo();if(media && Number.isFinite(media.duration)){media.currentTime=Number(seekVideo.value)/100*media.duration;updatePlaybackControls();revealVideoTitle();}});
+  playbackControls.addEventListener('focusin',revealVideoTitle);
+  playbackControls.addEventListener('pointermove',revealVideoTitle,{passive:true});
+  playbackControls.addEventListener('keydown',revealVideoTitle);
+  document.addEventListener('cutform:language',updatePlaybackControls);
+  stage.addEventListener('keydown',event=>{if(event.code==='Space' && !event.target.closest('input,button')){event.preventDefault();toggleCurrentVideo();}});
+
   const feedCount=document.createElement('span');feedCount.className='mono';feedCount.setAttribute('aria-live','polite');
   feedNav.append(previous,next);stage.after(feedNav);
   feedCount.classList.add('player-feed-count');feedHint.classList.add('player-feed-hint');
@@ -312,11 +378,12 @@
   }
   function activateVideo(index){
     if(index===feedIndex || !dialog.open || !feedSlides[index])return;
+    controlSeeking=false;
+    feedIndex=index;
     feedSlides.forEach((slide,i)=>{
       if(i!==index)releaseMedia(slide);
       slide.inert=i!==index;
     });
-    feedIndex=index;
     const {item,source}=validProjects[index];activeProject=item;
     const ratio=(['9/16','16/9','1/1','4/5'].includes(item.ratio)?item.ratio:item.measured)||'9/16';
     const [width,height]=ratio.split('/').map(Number);
@@ -337,12 +404,27 @@
       media.allowFullscreen=true;media.referrerPolicy='strict-origin-when-cross-origin';
       media.style.aspectRatio=(item.ratio||'16/9');
     }else{
-      media.controls=true;media.playsInline=true;media.loop=true;media.muted=soundMuted;
+      media.controls=false;media.playsInline=true;media.loop=true;media.muted=soundMuted;
+      for(const event of ['timeupdate','loadedmetadata','durationchange','volumechange','play','pause']){
+        media.addEventListener(event,()=>{if(media.parentElement===feedSlides[feedIndex])updatePlaybackControls();});
+      }
+      let touchStart=null;
+      media.addEventListener('pointerdown',event=>{touchStart={x:event.clientX,y:event.clientY,scroll:stage.scrollTop};});
+      media.addEventListener('click',event=>{
+        if(touchStart && (Math.abs(event.clientX-touchStart.x)>12 || Math.abs(event.clientY-touchStart.y)>12 || Math.abs(stage.scrollTop-touchStart.scroll)>12))return;
+        toggleCurrentVideo();
+      });
+      for(const event of ['playing','pause','waiting','seeking','seeked','ended','error']){
+        media.addEventListener(event,()=>{
+          if(dialog.open && media.parentElement===feedSlides[feedIndex])revealVideoTitle();
+        });
+      }
       media.setAttribute('controlslist','nodownload');
       const still=safeAsset(item.poster);if(still)media.poster=still;
       media.addEventListener('volumechange',()=>{if(feedIndex===index)soundMuted=media.muted;});
     }
     media.src=source.embed;feedSlides[index].append(media);
+    updatePlaybackControls();revealVideoTitle();
     if(source.type==='video')media.play().catch(()=>{
       // A swipe may not count as permission for sound. Native controls remain available.
       if(dialog.open && feedIndex===index && media.isConnected){media.muted=true;media.play().catch(()=>{});}
@@ -384,6 +466,13 @@
     stage.replaceChildren(...feedSlides);
     savedOverflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';
     dialog.showModal();
+    clearTimeout(hintTimer);
+    feedHint.classList.remove('is-dismissed');
+    feedHint.removeAttribute('aria-hidden');
+    hintTimer=setTimeout(()=>{
+      feedHint.classList.add('is-dismissed');
+      feedHint.setAttribute('aria-hidden','true');
+    },15000);
     const index=validProjects.findIndex(record=>record.item===item);
     activateVideo(index);
     stage.scrollTo({top:index*stage.clientHeight,behavior:'instant'});
@@ -392,6 +481,8 @@
   document.querySelector('[data-close-player]').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('click',event=>{if(event.target===dialog){const box=dialog.getBoundingClientRect();if(event.clientX<box.left || event.clientX>box.right || event.clientY<box.top || event.clientY>box.bottom)dialog.close();}});
   dialog.addEventListener('close',()=>{
+    clearTimeout(hintTimer);hintTimer=0;
+    clearTimeout(titleTimer);titleTimer=0;controlSeeking=false;titleOverlay.classList.remove('is-idle');
     cancelAnimationFrame(feedFrame);feedFrame=0;feedSlides.forEach(releaseMedia);
     stage.replaceChildren();feedSlides=[];feedIndex=-1;activeProject=null;
     document.documentElement.style.overflow=savedOverflow;
