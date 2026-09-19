@@ -276,3 +276,37 @@ dialog[data-shape="16/9"] #player-stage iframe,dialog[data-shape="16/9"] #player
    content-visibility on the sections -- it skips layout for offscreen subtrees,
    which is exactly what the scroll reveals measure against. */
 .work-open{contain:paint}
+
+/* Scrollable portfolio viewer: one complete video per swipe. */
+html:has(#player[open]){overflow:hidden}
+dialog#player{width:min(880px,96vw);height:94vh;height:94dvh;max-height:94dvh;overflow:hidden}
+dialog#player #player-stage{display:block;overflow-x:hidden;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;touch-action:pan-y;flex:1 1 0;min-height:0}
+#player-stage::-webkit-scrollbar{display:none}
+.player-feed-slide{height:100%;width:100%;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000}
+dialog#player #player-stage .player-feed-slide video,dialog#player #player-stage .player-feed-slide iframe{display:block;width:100%;height:100%;max-height:100%;max-width:100%;object-fit:contain;margin:0;border:0;flex:none}
+dialog#player #player-stage .player-feed-slide iframe{height:auto}
+.player-feed-nav{display:flex;align-items:center;justify-content:flex-end;gap:16px;flex:0 0 auto;padding:10px 24px;border-top:1px solid var(--line)}
+.player-feed-nav>span:first-child{margin-inline-end:auto;color:var(--muted);font-size:10px}
+.player-feed-nav button{width:44px;height:44px;background:transparent;border:1px solid var(--line);color:var(--gold);font-size:22px}
+.player-feed-nav button:hover:enabled{background:#292720}
+.player-feed-nav button:disabled{opacity:.25;cursor:default}
+dialog#player .player-meta{padding-top:8px;padding-bottom:8px}
+dialog#player #player-description{max-height:60px;overflow:auto;margin:0;padding-bottom:8px}
+dialog#player #player-source{margin-top:4px;margin-bottom:12px}
+@media(max-width:700px){
+  dialog#player{width:100%;max-width:100%;height:100vh;height:100dvh;max-height:100dvh}
+  .player-feed-nav{gap:12px;padding:8px 18px}
+  dialog#player .player-bar{padding:12px 18px}
+  dialog#player .player-slot{margin-bottom:5px}
+}
+
+/* Project names retain the typography of their own language. */
+html .work-caption h3[lang="en"]{font-family:'DM Sans',Arial,sans-serif;font-size:clamp(19px,1.55vw,24px);line-height:1.16;letter-spacing:-.03em}
+html .work-caption h3[lang="ar"]{font-family:'Noto Sans Arabic',Arial,sans-serif;font-size:clamp(19px,1.55vw,24px);line-height:1.5;letter-spacing:0}
+html dialog#player .player-bar #player-title{font-size:clamp(19px,2vw,23px);line-height:1.2;overflow-wrap:anywhere}
+html dialog#player #player-title[lang="en"]{font-family:'DM Sans',Arial,sans-serif;letter-spacing:-.02em}
+html dialog#player #player-title[lang="ar"]{font-family:'Noto Sans Arabic',Arial,sans-serif;line-height:1.5;letter-spacing:0}
+@media(max-width:700px){
+  html .work-caption h3[lang]{font-size:21px}
+  html dialog#player .player-bar #player-title{font-size:18px}
+}
